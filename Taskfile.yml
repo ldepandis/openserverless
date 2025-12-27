@@ -1,0 +1,37 @@
+version: "3"
+
+dotenv:
+  - ./runtimes/.env
+
+# Central Taskfile delegating to component Taskfiles so that we can run
+# commands like `task runtimes:build` or `task cli:test` from repo root.
+includes:
+  cli:
+    dir: ./cli
+    taskfile: ./cli/Taskfile.yml
+  runtimes:
+    dir: ./runtimes
+    taskfile: ./runtimes/Taskfile.yml
+  olaris-op:
+    dir: ./olaris-op
+    taskfile: ./olaris-op/TaskfileBuild.yml
+
+tasks:
+  default:
+    desc: Show all available tasks, including ones provided by sub-projects.
+    cmds:
+      - task --list-all
+  build:
+    desc: "Build all components. Optional: registry=<host/namespace>, platforms=<list>."
+    vars:
+      registry: ""
+      platforms: "linux/amd64,linux/arm64"
+    cmds:
+      - |
+        for comp in cli runtimes olaris-op; do
+          if [ -n "{{.registry}}" ]; then
+            task "$comp:build" REGISTRY="{{.registry}}" PLATFORMS="{{.platforms}}"
+          else
+            task "$comp:build" PLATFORMS="{{.platforms}}"
+          fi
+        done
